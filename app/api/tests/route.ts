@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
 export async function POST(request: Request) {
-  const { exercise, value, testedAt } = await request.json();
+  const { exercise, value, reps, testedAt } = await request.json();
 
   const { data: found } = await supabase
     .from("exercises")
-    .select("slug")
+    .select("slug, needs_reps")
     .eq("slug", exercise)
     .eq("kind", "test")
     .maybeSingle();
@@ -20,11 +20,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Enter a positive number" }, { status: 400 });
   }
 
+  let repCount: number | null = null;
+  if (found.needs_reps) {
+    repCount = Number(reps);
+    if (!Number.isInteger(repCount) || repCount < 1) {
+      return NextResponse.json({ error: "Enter the number of reps" }, { status: 400 });
+    }
+  }
+
   const date = testedAt || new Date().toLocaleDateString("en-CA");
 
   const { error } = await supabase
     .from("test_results")
-    .insert({ exercise, value: num, tested_at: date });
+    .insert({ exercise, value: num, reps: repCount, tested_at: date });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

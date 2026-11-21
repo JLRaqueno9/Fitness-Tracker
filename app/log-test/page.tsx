@@ -1,14 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
 
-type Test = { slug: string; name: string; unit: string };
+type Test = { slug: string; name: string; unit: string; needs_reps: boolean };
 
 export default function LogTestPage() {
   const [tests, setTests] = useState<Test[]>([]);
   const [exercise, setExercise] = useState("");
   const [value, setValue] = useState("");
+  const [reps, setReps] = useState("");
   const [date, setDate] = useState("");
   const [message, setMessage] = useState("");
+
+  const selected = tests.find((t) => t.slug === exercise);
 
   useEffect(() => {
     setDate(new Date().toLocaleDateString("en-CA"));
@@ -31,12 +34,13 @@ export default function LogTestPage() {
     const res = await fetch("/api/tests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ exercise, value, testedAt: date }),
+      body: JSON.stringify({ exercise, value, reps, testedAt: date }),
     });
     const data = await res.json();
     if (res.ok) {
       setMessage("Saved!");
       setValue("");
+      setReps("");
     } else {
       setMessage(data.error || "Something went wrong");
     }
@@ -63,10 +67,22 @@ export default function LogTestPage() {
           min="0"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="Result"
+          placeholder={selected ? `Result (${selected.unit})` : "Result"}
           required
           className="border p-2"
         />
+        {selected?.needs_reps && (
+          <input
+            type="number"
+            step="1"
+            min="1"
+            value={reps}
+            onChange={(e) => setReps(e.target.value)}
+            placeholder="Reps"
+            required
+            className="border p-2"
+          />
+        )}
         <input
           type="date"
           value={date}

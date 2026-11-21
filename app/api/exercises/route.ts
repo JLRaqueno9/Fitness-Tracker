@@ -4,9 +4,9 @@ import { supabase } from "@/lib/supabase";
 export async function GET() {
   const { data, error } = await supabase
     .from("exercises")
-    .select("slug, name, unit")
+    .select("slug, name, unit, needs_reps")
     .eq("kind", "test")
-    .order("id");
+    .order("sort_order");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
