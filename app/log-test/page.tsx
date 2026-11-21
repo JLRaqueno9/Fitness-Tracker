@@ -1,11 +1,29 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+type Test = { slug: string; name: string; unit: string };
 
 export default function LogTestPage() {
-  const [exercise, setExercise] = useState("pushups");
+  const [tests, setTests] = useState<Test[]>([]);
+  const [exercise, setExercise] = useState("");
   const [value, setValue] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState("");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setDate(new Date().toLocaleDateString("en-CA"));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/exercises")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setTests(data);
+          if (data.length > 0) setExercise(data[0].slug);
+        }
+      });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,9 +51,11 @@ export default function LogTestPage() {
           onChange={(e) => setExercise(e.target.value)}
           className="border p-2"
         >
-          <option value="pushups">Push-ups (reps)</option>
-          <option value="plank">Plank (seconds)</option>
-          <option value="run">Run (minutes)</option>
+          {tests.map((t) => (
+            <option key={t.slug} value={t.slug}>
+              {t.name} ({t.unit})
+            </option>
+          ))}
         </select>
         <input
           type="number"

@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-const EXERCISES = ["pushups", "plank", "run"];
-
 export async function POST(request: Request) {
   const { exercise, value, testedAt } = await request.json();
 
-  if (!EXERCISES.includes(exercise)) {
+  const { data: found } = await supabase
+    .from("exercises")
+    .select("slug")
+    .eq("slug", exercise)
+    .eq("kind", "test")
+    .maybeSingle();
+
+  if (!found) {
     return NextResponse.json({ error: "Unknown exercise" }, { status: 400 });
   }
 
@@ -15,7 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Enter a positive number" }, { status: 400 });
   }
 
-  const date = testedAt || new Date().toISOString().slice(0, 10);
+  const date = testedAt || new Date().toLocaleDateString("en-CA");
 
   const { error } = await supabase
     .from("test_results")
