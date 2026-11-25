@@ -1,17 +1,14 @@
 export type Exercise = {
   slug: string;
   name: string;
+  kind: "test" | "support";
+  category: string | null;
   unit: string;
   needs_reps: boolean;
-  category: string | null;
   higher_is_better: boolean | null;
-};
-
-export type Setup = {
-  tests: string[];
-  lifts: string[];
-  equipment: string[];
-  preferBodyweight: boolean;
+  default_sets: number | null;
+  default_amount: number | null;
+  equipment: string;
 };
 
 export type Result = {
@@ -22,7 +19,33 @@ export type Result = {
   tested_at: string;
 };
 
-const KEY = "fitness-setup-v1";
+export type Profile = {
+  focus_tests: string[];
+  equipment: string[];
+  prefer_bodyweight: boolean;
+};
+
+export type RoutineItem = {
+  id: number;
+  for_test: string | null;
+  testName: string | null;
+  exercise: string;
+  name: string;
+  unit: string;
+  equipment: string;
+  sets: number;
+  amount: number;
+  notes: string | null;
+};
+
+export type Routine = {
+  id: number;
+  name: string;
+  kind: "generated" | "custom";
+  start_date: string;
+  review_date: string;
+  items: RoutineItem[];
+};
 
 export const EQUIPMENT_OPTIONS = [
   { slug: "dumbbells", label: "Dumbbells" },
@@ -32,33 +55,43 @@ export const EQUIPMENT_OPTIONS = [
   { slug: "box", label: "Box or sturdy step" },
 ];
 
-export function loadSetup(): Setup | null {
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as Setup) : null;
-  } catch {
-    return null;
-  }
-}
-
-export function saveSetup(setup: Setup) {
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(setup));
-  } catch {
-    return;
-  }
-}
-
-export function chosenSlugs(setup: Setup | null): string[] {
-  return setup ? [...setup.tests, ...setup.lifts] : [];
+export function equipmentLabel(slug: string): string {
+  const labels: Record<string, string> = {
+    dumbbells: "dumbbells",
+    machines: "gym machines",
+    "pullup-bar": "a pull-up bar",
+    "med-ball": "a medicine ball",
+    box: "a box or step",
+  };
+  return labels[slug] ?? slug;
 }
 
 // Lifts are logged as weight plus reps, so progress is compared using an
-// estimated one-rep max. Everything else is compared using the raw value.
-export function metric(result: Result, exercise: Exercise): number {
-  const value = Number(result.value);
-  if (exercise.needs_reps && result.reps) {
-    return Math.round(value * (1 + result.reps / 30) * 10) / 10;
+// estimated one-rep max. Every other test is compared using the raw value.
+export function metricOf(value: number, reps: number | null, needsReps: boolean): number {
+  const v = Number(value);
+  if (needsReps && reps) {
+    return Math.round(v * (1 + reps / 30) * 10) / 10;
   }
-  return value;
+  return v;
+}
+
+export function formatResult(ex: Exercise, r: Result): string {
+  return ex.needs_reps && r.reps
+    ? `${r.value} ${ex.unit} × ${r.reps} reps`
+    : `${r.value} ${ex.unit}`;
+}
+
+export function isDate(s: unknown): s is string {
+  return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
+}
+
+export function addDays(date: string, days: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+// Only call this inside effects and event handlers, never while rendering.
+export function localToday(): string {
+  return new Date().toLocaleDateString("en-CA");
 }

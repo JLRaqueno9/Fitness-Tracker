@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { EQUIPMENT_OPTIONS, loadSetup, saveSetup, type Exercise } from "@/lib/setup";
+import { EQUIPMENT_OPTIONS, type Exercise } from "@/lib/setup";
 
 export default function SetupPage() {
   const router = useRouter();
@@ -10,20 +10,32 @@ export default function SetupPage() {
   const [pickedLifts, setPickedLifts] = useState<string[]>([]);
   const [equipment, setEquipment] = useState<string[]>([]);
   const [preferBodyweight, setPreferBodyweight] = useState(false);
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    fetch("/api/exercises")
-      .then((r) => r.json())
-      .then((d) => {
-        if (Array.isArray(d)) setExercises(d);
-      });
-    const saved = loadSetup();
-    if (saved) {
-      setPickedTests(saved.tests);
-      setPickedLifts(saved.lifts);
-      setEquipment(saved.equipment);
-      setPreferBodyweight(saved.preferBodyweight);
-    }
+    Promise.all([
+      fetch("/api/exercises").then((r) => r.json()),
+      fetch("/api/profile").then((r) => r.json()),
+    ])
+      .then(([ex, profile]) => {
+        const tests: Exercise[] = Array.isArray(ex)
+          ? ex.filter((e: Exercise) => e.kind === "test")
+          : [];
+        setExercises(tests);
+        if (profile && Array.isArray(profile.focus_tests)) {
+          const saved: string[] = profile.focus_tests;
+          setPickedTests(
+            tests.filter((t) => t.category !== "lift" && saved.includes(t.slug)).map((t) => t.slug)
+          );
+          setPickedLifts(
+            tests.filter((t) => t.category === "lift" && saved.includes(t.slug)).map((t) => t.slug)
+          );
+          setEquipment(Array.isArray(profile.equipment) ? profile.equipment : []);
+          setPreferBodyweight(profile.prefer_bodyweight === true);
+        }
+      })
+      .catch(() => setMessage("Could not load your setup"));
   }, []);
 
   function toggle(list: string[], setList: (v: string[]) => void, slug: string, max: number) {
@@ -34,13 +46,29 @@ export default function SetupPage() {
     }
   }
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    saveSetup({ tests: pickedTests, lifts: pickedLifts, equipment, preferBodyweight });
-    router.push("/");
+    setBusy(true);
+    setMessage("");
+    const res = await fetch("/api/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        focus_tests: [...pickedTests, ...pickedLifts],
+        equipment,
+        prefer_bodyweight: preferBodyweight,
+      }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      router.push("/routine");
+    } else {
+      setMessage(data.error || "Something went wrong");
+      setBusy(false);
+    }
   }
 
-  const tests = exercises.filter((e) => e.category === "fitness test");
+  const tests = exercises.filter((e) => e.category !== "lift");
   const lifts = exercises.filter((e) => e.category === "lift");
   const ready = pickedTests.length === 5 && pickedLifts.length === 2;
 
@@ -48,7 +76,8 @@ export default function SetupPage() {
     <main className="mx-auto max-w-3xl p-6">
       <h1 className="mb-1 text-2xl font-bold">Setup</h1>
       <p className="mb-6 opacity-80">
-        Choose what you want to track and what equipment you have. You can change this at any time.
+        Choose what your routine focuses on. You can still log results for every test and lift. You
+        can change this at any time.
       </p>
 
       <form onSubmit={handleSave} className="flex flex-col gap-8">
@@ -125,14 +154,15 @@ export default function SetupPage() {
         <div>
           <button
             type="submit"
-            disabled={!ready}
+            disabled={!ready || busy}
             className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-40"
           >
-            Save setup
+            {busy ? "Saving..." : "Save setup"}
           </button>
           {!ready && (
             <p className="mt-2 text-sm opacity-70">Pick exactly 5 tests and 2 lifts to continue.</p>
           )}
+          {message && <p className="mt-2">{message}</p>}
         </div>
       </form>
     </main>

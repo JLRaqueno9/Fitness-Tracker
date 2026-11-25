@@ -1,24 +1,18 @@
-import { NextResponse, connection } from "next/server";
+import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { getUserId, notSignedIn } from "@/lib/server";
 
-
-
-export async function GET(request: Request) {
-  await connection();
-  const slugs = (new URL(request.url).searchParams.get("slugs") || "")
-    .split(",")
-    .filter(Boolean);
-
-  if (slugs.length === 0) {
-    return NextResponse.json([]);
-  }
+// All of the signed-in user's results, for every test and lift
+export async function GET() {
+  const userId = await getUserId();
+  if (!userId) return notSignedIn();
 
   const { data, error } = await supabase
     .from("test_results")
     .select("id, exercise, value, reps, tested_at")
-    .in("exercise", slugs)
-    .order("tested_at")
-    .order("id");
+    .eq("user_id", userId)
+    .order("tested_at", { ascending: true })
+    .order("id", { ascending: true });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
