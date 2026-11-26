@@ -72,11 +72,11 @@ export default function RoutineEditor({ title, supports, initial, onSave, onCanc
   async function save() {
     setError("");
     if (!name.trim()) {
-      setError("Give your routine a name");
+      setError("Give your routine a name.");
       return;
     }
     if (rows.length === 0) {
-      setError("Add at least one exercise");
+      setError("Add at least one exercise.");
       return;
     }
 
@@ -87,11 +87,11 @@ export default function RoutineEditor({ title, supports, initial, onSave, onCanc
     }));
     for (const i of items) {
       if (!Number.isInteger(i.sets) || i.sets < 1 || i.sets > 10) {
-        setError("Sets must be a whole number from 1 to 10");
+        setError("Sets must be a whole number from 1 to 10.");
         return;
       }
       if (!Number.isInteger(i.amount) || i.amount < 1 || i.amount > 300) {
-        setError("Amount must be a whole number from 1 to 300");
+        setError("Amount must be a whole number from 1 to 300.");
         return;
       }
     }
@@ -105,42 +105,62 @@ export default function RoutineEditor({ title, supports, initial, onSave, onCanc
   }
 
   return (
-    <section className="mb-8 rounded border-2 border-blue-600 p-4">
-      <h2 className="mb-3 text-lg font-semibold">{title}</h2>
+    <section className="panel border-2 border-ink p-5 shadow-lg md:p-6" aria-label={title}>
+      <h2 className="section-title mb-5">{title}</h2>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1 text-sm">
-          Routine name
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="routine-name" className="label">
+            Routine name
+          </label>
           <input
+            id="routine-name"
             type="text"
             value={name}
             maxLength={60}
             onChange={(e) => setName(e.target.value)}
-            className="rounded border bg-white p-2 text-black"
+            className="field"
           />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Retest on
+        </div>
+        <div>
+          <label htmlFor="routine-retest" className="label">
+            Retest on
+          </label>
           <input
+            id="routine-retest"
             type="date"
             value={reviewDate}
             onChange={(e) => setReviewDate(e.target.value)}
-            className="rounded border bg-white p-2 text-black"
+            className="field"
           />
-        </label>
+        </div>
       </div>
+
+      <h3 className="mb-3 mt-8 font-semibold">Exercises</h3>
+
+      {rows.length === 0 && (
+        <p className="rounded-xl border border-dashed border-line p-4 text-sm text-muted">
+          No exercises yet. Add the first one below.
+        </p>
+      )}
 
       <ul className="flex flex-col gap-3">
         {rows.map((r, i) => {
           const ex = bySlug[r.exercise];
           return (
-            <li key={i} className="flex flex-wrap items-end gap-2 rounded border p-3">
-              <label className="flex min-w-48 flex-1 flex-col gap-1 text-sm">
-                Exercise
+            <li
+              key={i}
+              className="grid grid-cols-[1fr_1fr] items-end gap-3 rounded-xl bg-sunken p-3 sm:grid-cols-[1fr_5rem_11rem_auto]"
+            >
+              <div className="col-span-2 sm:col-span-1">
+                <label htmlFor={`ex-${i}`} className="label">
+                  Exercise
+                </label>
                 <select
+                  id={`ex-${i}`}
                   value={r.exercise}
                   onChange={(e) => changeExercise(i, e.target.value)}
-                  className="rounded border bg-white p-2 text-black"
+                  className="field"
                 >
                   {supports.map((s) => (
                     <option key={s.slug} value={s.slug}>
@@ -148,35 +168,46 @@ export default function RoutineEditor({ title, supports, initial, onSave, onCanc
                     </option>
                   ))}
                 </select>
-              </label>
-              <label className="flex w-20 flex-col gap-1 text-sm">
-                Sets
+              </div>
+              <div>
+                <label htmlFor={`sets-${i}`} className="label">
+                  Sets
+                </label>
                 <input
+                  id={`sets-${i}`}
                   type="number"
+                  inputMode="numeric"
                   min="1"
                   max="10"
                   step="1"
                   value={r.sets}
                   onChange={(e) => update(i, { sets: e.target.value })}
-                  className="rounded border bg-white p-2 text-black"
+                  className="field"
                 />
-              </label>
-              <label className="flex w-28 flex-col gap-1 text-sm">
-                {ex?.unit ?? "Amount"}
-                <input
-                  type="number"
-                  min="1"
-                  max="300"
-                  step="1"
-                  value={r.amount}
-                  onChange={(e) => update(i, { amount: e.target.value })}
-                  className="rounded border bg-white p-2 text-black"
-                />
-              </label>
+              </div>
+              <div>
+                <label htmlFor={`amount-${i}`} className="label">
+                  Amount
+                </label>
+                <div className="field-wrap">
+                  <input
+                    id={`amount-${i}`}
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    max="300"
+                    step="1"
+                    value={r.amount}
+                    onChange={(e) => update(i, { amount: e.target.value })}
+                    className="field"
+                  />
+                  <span className="field-unit">{ex?.unit ?? ""}</span>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => removeRow(i)}
-                className="rounded border px-3 py-2 text-sm"
+                className="btn-quiet btn-danger col-span-2 justify-self-end sm:col-span-1 sm:self-center"
               >
                 Remove
               </button>
@@ -185,24 +216,21 @@ export default function RoutineEditor({ title, supports, initial, onSave, onCanc
         })}
       </ul>
 
-      {rows.length === 0 && <p className="text-sm opacity-70">No exercises yet. Add one below.</p>}
-
-      <button type="button" onClick={addRow} className="mt-3 rounded border px-3 py-2 text-sm">
-        + Add exercise
+      <button type="button" onClick={addRow} className="btn btn-outline btn-sm mt-4">
+        Add exercise
       </button>
 
-      {error && <p className="mt-3 text-red-600">{error}</p>}
+      {error && (
+        <p role="alert" className="notice notice-bad mt-5">
+          {error}
+        </p>
+      )}
 
-      <div className="mt-4 flex gap-3">
-        <button
-          type="button"
-          onClick={save}
-          disabled={busy}
-          className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-40"
-        >
+      <div className="mt-6 flex flex-wrap gap-3">
+        <button type="button" onClick={save} disabled={busy} className="btn btn-primary">
           {busy ? "Saving..." : "Save routine"}
         </button>
-        <button type="button" onClick={onCancel} className="rounded border px-4 py-2">
+        <button type="button" onClick={onCancel} className="btn btn-outline">
           Cancel
         </button>
       </div>

@@ -3,6 +3,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EQUIPMENT_OPTIONS, type Exercise } from "@/lib/setup";
 
+function Count({ n, of }: { n: number; of: number }) {
+  return <span className={`chip ${n === of ? "chip-good" : ""}`}>{`${n} of ${of} chosen`}</span>;
+}
+
 export default function SetupPage() {
   const router = useRouter();
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -35,7 +39,7 @@ export default function SetupPage() {
           setPreferBodyweight(profile.prefer_bodyweight === true);
         }
       })
-      .catch(() => setMessage("Could not load your setup"));
+      .catch(() => setMessage("Could not load your setup. Refresh the page to try again."));
   }, []);
 
   function toggle(list: string[], setList: (v: string[]) => void, slug: string, max: number) {
@@ -63,7 +67,7 @@ export default function SetupPage() {
     if (res.ok) {
       router.push("/routine");
     } else {
-      setMessage(data.error || "Something went wrong");
+      setMessage(data.error || "Something went wrong. Try again.");
       setBusy(false);
     }
   }
@@ -73,21 +77,24 @@ export default function SetupPage() {
   const ready = pickedTests.length === 5 && pickedLifts.length === 2;
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <h1 className="mb-1 text-2xl font-bold">Setup</h1>
-      <p className="mb-6 opacity-80">
-        Choose what your routine focuses on. You can still log results for every test and lift. You
-        can change this at any time.
+    <main className="mx-auto max-w-3xl px-4 py-6 md:px-6 md:py-10">
+      <h1 className="page-title">Setup</h1>
+      <p className="page-sub">
+        Choose what your routine focuses on. You can still log results for every test and lift, and
+        you can change this at any time.
       </p>
 
-      <form onSubmit={handleSave} className="flex flex-col gap-8">
+      <form onSubmit={handleSave} className="mt-8 flex flex-col gap-10">
         <section>
-          <h2 className="mb-2 text-lg font-semibold">Fitness tests ({pickedTests.length}/5)</h2>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="section-title">Fitness tests</h2>
+            <Count n={pickedTests.length} of={5} />
+          </div>
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {tests.map((e) => {
               const checked = pickedTests.includes(e.slug);
               return (
-                <label key={e.slug} className="flex items-center gap-2">
+                <label key={e.slug} className="choice">
                   <input
                     type="checkbox"
                     checked={checked}
@@ -102,12 +109,15 @@ export default function SetupPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-lg font-semibold">Lifts ({pickedLifts.length}/2)</h2>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="section-title">Lifts</h2>
+            <Count n={pickedLifts.length} of={2} />
+          </div>
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {lifts.map((e) => {
               const checked = pickedLifts.includes(e.slug);
               return (
-                <label key={e.slug} className="flex items-center gap-2">
+                <label key={e.slug} className="choice">
                   <input
                     type="checkbox"
                     checked={checked}
@@ -122,10 +132,13 @@ export default function SetupPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-lg font-semibold">Equipment you can use</h2>
-          <div className="flex flex-col gap-2">
+          <h2 className="section-title mb-1">Equipment you can use</h2>
+          <p className="mb-3 text-sm text-muted">
+            Routines only include exercises you can do with what you pick here.
+          </p>
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {EQUIPMENT_OPTIONS.map((o) => (
-              <label key={o.slug} className="flex items-center gap-2">
+              <label key={o.slug} className="choice">
                 <input
                   type="checkbox"
                   checked={equipment.includes(o.slug)}
@@ -141,7 +154,7 @@ export default function SetupPage() {
               </label>
             ))}
           </div>
-          <label className="mt-4 flex items-center gap-2">
+          <label className="choice mt-2.5">
             <input
               type="checkbox"
               checked={preferBodyweight}
@@ -152,17 +165,13 @@ export default function SetupPage() {
         </section>
 
         <div>
-          <button
-            type="submit"
-            disabled={!ready || busy}
-            className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-40"
-          >
+          <button type="submit" disabled={!ready || busy} className="btn btn-primary w-full sm:w-auto">
             {busy ? "Saving..." : "Save setup"}
           </button>
           {!ready && (
-            <p className="mt-2 text-sm opacity-70">Pick exactly 5 tests and 2 lifts to continue.</p>
+            <p className="mt-3 text-sm text-muted">Choose exactly 5 fitness tests and 2 lifts to save.</p>
           )}
-          {message && <p className="mt-2">{message}</p>}
+          {message && <p className="notice notice-bad mt-3">{message}</p>}
         </div>
       </form>
     </main>

@@ -47,61 +47,113 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto max-w-sm p-6">
-      <h1 className="mb-1 text-3xl font-bold">Fitness Test Tracker</h1>
-      <p className="mb-6 opacity-80">
-        {mode === "login" ? "Log in to continue." : "Create an account to get started."}
-      </p>
+    <main className="grid min-h-dvh md:grid-cols-2">
+      <section className="flex flex-col justify-between gap-10 bg-hero p-8 text-on-hero md:p-12">
+        <p className="flex items-center gap-2.5 font-display text-2xl font-bold leading-none">
+          <span aria-hidden="true" className="block h-6 w-2 rounded-sm bg-accent" />
+          Fitness Test Tracker
+        </p>
+        <div>
+          <h1 className="font-display text-6xl font-bold leading-[1] md:text-7xl">
+            <span className="block">Log the test.</span>
+            <span className="block">Train the gap.</span>
+          </h1>
+          <p className="mt-5 max-w-sm text-hero-muted">
+            Track your beep test, sprints, jumps and lifts, then get a routine built around what is
+            holding you back.
+          </p>
+        </div>
+      </section>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        {mode === "signup" && (
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            required
-            className="rounded border bg-white p-2 text-black"
-          />
-        )}
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          required
-          className="rounded border bg-white p-2 text-black"
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password (at least 8 characters)"
-          minLength={8}
-          required
-          className="rounded border bg-white p-2 text-black"
-        />
-        <button
-          type="submit"
-          disabled={busy}
-          className="rounded bg-blue-600 p-2 text-white disabled:opacity-40"
-        >
-          {busy ? "Please wait..." : mode === "login" ? "Log in" : "Create account"}
-        </button>
-      </form>
+      <section className="flex items-center justify-center p-6 md:p-12">
+        <div className="w-full max-w-sm">
+          <div className="seg mb-6" role="tablist" aria-label="Sign in or create an account">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "login"}
+              onClick={() => {
+                setMode("login");
+                setMessage("");
+              }}
+            >
+              Log in
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "signup"}
+              onClick={() => {
+                setMode("signup");
+                setMessage("");
+              }}
+            >
+              Create account
+            </button>
+          </div>
 
-      {message && <p className="mt-3">{message}</p>}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {mode === "signup" && (
+              <div>
+                <label htmlFor="name" className="label">
+                  Your name
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                  required
+                  className="field"
+                />
+              </div>
+            )}
+            <div>
+              <label htmlFor="email" className="label">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+                className="field"
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="label">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                minLength={8}
+                required
+                className="field"
+              />
+              {mode === "signup" && (
+                <p className="mt-1.5 text-sm text-muted">Use at least 8 characters.</p>
+              )}
+            </div>
 
-      <button
-        type="button"
-        onClick={() => {
-          setMode(mode === "login" ? "signup" : "login");
-          setMessage("");
-        }}
-        className="mt-6 text-sm underline"
-      >
-        {mode === "login" ? "New here? Create an account" : "Already have an account? Log in"}
-      </button>
+            <button type="submit" disabled={busy} className="btn btn-primary mt-1 w-full">
+              {busy ? "Please wait..." : mode === "login" ? "Log in" : "Create account"}
+            </button>
+          </form>
+
+          {message && (
+            <p role="alert" className="notice notice-bad mt-4">
+              {message}
+            </p>
+          )}
+        </div>
+      </section>
     </main>
   );
 }

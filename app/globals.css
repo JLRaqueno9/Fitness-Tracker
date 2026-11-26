@@ -1,26 +1,396 @@
 @import "tailwindcss";
 
+/* Palette: deep navy, agility cone orange, chalk blue-grey. One dark theme for the whole app.
+   Orange is used for fills and bars, and as the accent on buttons. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --bg: #070e26;
+  --surface: #0f1a3d;
+  --sunken: #0b1431;
+  --ink: #eef1ff;
+  --muted: #a3aed4;
+  --line: #23315f;
+  --accent: #ff7a2e;
+  --accent-hover: #ff8c4a;
+  --on-accent: #0a1230;
+  --focus: #8da2ff;
+  --good: #4cd989;
+  --good-soft: #12362a;
+  --bad: #ff8a8a;
+  --bad-soft: #3d1a22;
+  --hero: #13214f;
+  --on-hero: #f4f6ff;
+  --hero-muted: #b9c3e6;
+  --goal: #ffb27a;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-hero: var(--hero);
+  --color-on-hero: var(--on-hero);
+  --color-hero-muted: var(--hero-muted);
+  --color-goal: var(--goal);
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-barlow), "Arial Narrow", ui-sans-serif, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    background: var(--bg);
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Headings */
+  .page-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 2.5rem;
+    line-height: 1;
+  }
+  .page-sub {
+    margin-top: 0.6rem;
+    max-width: 60ch;
+    color: var(--muted);
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.6rem;
+    line-height: 1.1;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.9rem;
+    padding: 0.5rem 1.25rem;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+  .btn-outline {
+    border-color: var(--ink);
+    color: var(--ink);
+    background: transparent;
+  }
+  .btn-outline:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .btn-sm {
+    min-height: 2.4rem;
+    padding: 0.25rem 1rem;
+    font-size: 0.875rem;
+  }
+  .btn-quiet {
+    min-height: 2.4rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .btn-quiet:hover {
+    background: var(--sunken);
+  }
+  .btn-danger {
+    color: var(--bad);
+  }
+
+  /* Form fields */
+  .label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .field {
+    width: 100%;
+    min-height: 2.9rem;
+    padding: 0.55rem 0.85rem;
+    border: 1.5px solid var(--line);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    transition: border-color 0.15s;
+  }
+  .field:hover {
+    border-color: var(--muted);
+  }
+  .field::placeholder {
+    color: var(--muted);
+  }
+  .field-wrap {
+    position: relative;
+  }
+  .field-wrap .field {
+    padding-right: 5.5rem;
+  }
+  .field-unit {
+    position: absolute;
+    top: 50%;
+    right: 0.9rem;
+    transform: translateY(-50%);
+    max-width: 4.5rem;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* Surfaces */
+  .panel {
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: var(--surface);
+  }
+  .hero {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    background: var(--hero);
+    color: var(--on-hero);
+  }
+  @media (min-width: 640px) {
+    .hero {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 2rem;
+      padding: 2rem;
+    }
+  }
+
+  /* A result tile. The bar on the left marks the trend: green better, red worse. */
+  .tile {
+    padding: 1rem 1rem 1rem 1.4rem;
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: var(--surface);
+    box-shadow: inset 5px 0 0 var(--lane, var(--line));
+  }
+  .tile-good {
+    --lane: var(--good);
+  }
+  .tile-bad {
+    --lane: var(--bad);
+  }
+
+  /* Small labels */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.1rem 0.6rem;
+    border-radius: 999px;
+    background: var(--sunken);
+    color: var(--ink);
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+  .chip-good {
+    background: var(--good-soft);
+    color: var(--good);
+  }
+  .chip-bad {
+    background: var(--bad-soft);
+    color: var(--bad);
+  }
+  .chip-accent {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  /* Messages */
+  .notice {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: var(--sunken);
+    font-size: 0.95rem;
+  }
+  .notice-good {
+    background: var(--good-soft);
+    color: var(--good);
+    font-weight: 600;
+  }
+  .notice-bad {
+    background: var(--bad-soft);
+    color: var(--bad);
+    font-weight: 600;
+  }
+
+  /* Pick-one-or-more options. The accent bar shows what is chosen. */
+  .choice {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-height: 3rem;
+    padding: 0.6rem 0.9rem;
+    border: 1.5px solid var(--line);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+  .choice:hover {
+    border-color: var(--muted);
+  }
+  .choice:has(input:checked) {
+    border-color: var(--ink);
+    background: var(--sunken);
+    box-shadow: inset 5px 0 0 var(--accent);
+  }
+  .choice:has(input:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .choice input {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+    accent-color: var(--ink);
+  }
+
+  /* Two-option switch on the sign-in page */
+  .seg {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 999px;
+    background: var(--sunken);
+  }
+  .seg button {
+    min-height: 2.5rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .seg button[aria-selected="true"] {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  }
+
+  /* Score sheet table */
+  .score {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+  .score th {
+    padding: 0.65rem 0.85rem;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .score td {
+    padding: 0.7rem 0.85rem;
+    border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+    vertical-align: middle;
+  }
+  .score tr.group td {
+    padding: 0.5rem 0.85rem;
+    background: var(--sunken);
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  .score tr.row:hover td {
+    background: var(--sunken);
+  }
+  .score tr.selected td:first-child {
+    box-shadow: inset 5px 0 0 var(--accent);
+  }
+  .score tr.selected td {
+    background: var(--sunken);
+  }
+
+  /* Goal progress bar on the progress page */
+  .goal-bar {
+    height: 0.6rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--sunken);
+  }
+  .goal-bar > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+  .goal-bar.reached > span {
+    background: var(--good);
+  }
 }

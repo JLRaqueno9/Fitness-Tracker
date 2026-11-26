@@ -95,3 +95,80 @@ export function addDays(date: string, days: number): string {
 export function localToday(): string {
   return new Date().toLocaleDateString("en-CA");
 }
+
+export function prettyDate(date: string, withYear = false): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: withYear ? "numeric" : undefined,
+    timeZone: "UTC",
+  });
+}
+
+export function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(to) - Date.parse(from)) / 86400000);
+}
+
+export type Summary = {
+  rs: Result[];
+  metrics: number[];
+  latest: Result | undefined;
+  best: number | null;
+  change: number | null;
+  // true = moving the right way, false = moving the wrong way, null = no change or not enough data
+  better: boolean | null;
+};
+
+export function summarize(ex: Exercise, all: Result[]): Summary {
+  const rs = all.filter((r) => r.exercise === ex.slug);
+  const metrics = rs.map((r) => metricOf(r.value, r.reps, ex.needs_reps));
+  const higherIsBetter = ex.higher_is_better !== false;
+  const best =
+    metrics.length > 0 ? (higherIsBetter ? Math.max(...metrics) : Math.min(...metrics)) : null;
+  const change =
+    metrics.length > 1 ? Math.round((metrics[metrics.length - 1] - metrics[0]) * 10) / 10 : null;
+  const better = change === null || change === 0 ? null : higherIsBetter ? change > 0 : change < 0;
+  return { rs, metrics, latest: rs[rs.length - 1], best, change, better };
+}
+
+export type Goal = {
+  exercise: string;
+  target_value: number;
+  target_reps: number | null;
+};
+
+export type GoalStatus = {
+  // the goal, in the same measure used to compare results (estimated one-rep max for lifts)
+  target: number;
+  reached: boolean;
+  // 0 to 100, how far the best result is from the goal, measured from the first result
+  percent: number;
+};
+
+// A goal is reached when the best result is at or past it:
+// at or above for most tests, at or below for tests where lower is better.
+// Lifts compare the estimated one-rep max, the same as the progress chart.
+export function goalStatus(ex: Exercise, goal: Goal, s: Summary): GoalStatus {
+  const target = metricOf(goal.target_value, goal.target_reps, ex.needs_reps);
+  const higherIsBetter = ex.higher_is_better !== false;
+  const best = s.best;
+  const reached = best !== null && (higherIsBetter ? best >= target : best <= target);
+
+  let percent = 0;
+  if (reached) {
+    percent = 100;
+  } else if (s.metrics.length > 0) {
+    const start = s.metrics[0];
+    const span = target - start;
+    const done = (best ?? start) - start;
+    percent = span === 0 ? 0 : Math.max(0, Math.min(100, Math.round((done / span) * 100)));
+  }
+  return { target, reached, percent };
+}
+
+export function formatGoal(ex: Exercise, goal: Goal): string {
+  return ex.needs_reps && goal.target_reps
+    ? `${goal.target_value} ${ex.unit} × ${goal.target_reps} reps`
+    : `${goal.target_value} ${ex.unit}`;
+}

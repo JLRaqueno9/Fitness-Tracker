@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { localToday, type Exercise } from "@/lib/setup";
+import { goalStatus, localToday, summarize, type Exercise, type Goal, type Result } from "@/lib/setup";
+
+type Status = { kind: "idle" | "saving" | "ok" | "error"; text: string };
 
 export default function TrackPage() {
   const [tests, setTests] = useState<Exercise[]>([]);
@@ -8,7 +10,7 @@ export default function TrackPage() {
   const [value, setValue] = useState("");
   const [reps, setReps] = useState("");
   const [date, setDate] = useState("");
-  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<Status>({ kind: "idle", text: "" });
 
   useEffect(() => {
     setDate(localToday());
@@ -21,7 +23,7 @@ export default function TrackPage() {
           if (list.length > 0) setExercise(list[0].slug);
         }
       })
-      .catch(() => setMessage("Could not load the exercise list"));
+      .catch(() => setStatus({ kind: "error", text: "Could not load the exercise list. Refresh the page to try again." }));
   }, []);
 
   const selected = tests.find((t) => t.slug === exercise);
@@ -30,7 +32,7 @@ export default function TrackPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setMessage("Saving...");
+    setStatus({ kind: "saving", text: "Saving..." });
     const res = await fetch("/api/tests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -38,84 +40,136 @@ export default function TrackPage() {
     });
     const data = await res.json();
     if (res.ok) {
-      setMessage("Saved!");
+      let text = "Result saved.";
+      // If this result reaches the goal set on the Progress page, say so.
+      try {
+        const goals: Goal[] = await fetch("/api/goals").then((r) => r.json());
+        const goal = Array.isArray(goals) ? goals.find((g) => g.exercise === exercise) : undefined;
+        if (goal && selected) {
+          const justNow: Result = {
+            id: 0,
+            exercise,
+            value: Number(value),
+            reps: selected.needs_reps ? Number(reps) : null,
+            tested_at: date,
+          };
+          if (goalStatus(selected, goal, summarize(selected, [justNow])).reached) {
+            text = "Result saved. Goal reached!";
+          }
+        }
+      } catch {
+        // the result is saved either way
+      }
+      setStatus({ kind: "ok", text });
       setValue("");
       setReps("");
     } else {
-      setMessage(data.error || "Something went wrong");
+      setStatus({ kind: "error", text: data.error || "Something went wrong. Try again." });
     }
   }
 
   return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="mb-1 text-2xl font-bold">Track a result</h1>
-      <p className="mb-4 opacity-80">Log a result for any test or lift.</p>
+    <main className="mx-auto max-w-xl px-4 py-6 md:px-6 md:py-10">
+      <h1 className="page-title">Track a result</h1>
+      <p className="page-sub">Log any test or lift. Lifts take a weight and a number of reps.</p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <select
-          value={exercise}
-          onChange={(e) => setExercise(e.target.value)}
-          className="rounded border bg-white p-2 text-black"
-        >
-          <optgroup label="Fitness tests">
-            {fitnessTests.map((t) => (
-              <option key={t.slug} value={t.slug}>
-                {t.name} ({t.unit})
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Lifts">
-            {lifts.map((t) => (
-              <option key={t.slug} value={t.slug}>
-                {t.name} ({t.unit})
-              </option>
-            ))}
-          </optgroup>
-        </select>
+      <form onSubmit={handleSubmit} className="panel mt-6 flex flex-col gap-5 p-5 md:p-6">
+        <div>
+          <label htmlFor="exercise" className="label">
+            Exercise
+          </label>
+          <select
+            id="exercise"
+            value={exercise}
+            onChange={(e) => {
+              setExercise(e.target.value);
+              setStatus({ kind: "idle", text: "" });
+            }}
+            className="field"
+          >
+            <optgroup label="Fitness tests">
+              {fitnessTests.map((t) => (
+                <option key={t.slug} value={t.slug}>
+                  {t.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Lifts">
+              {lifts.map((t) => (
+                <option key={t.slug} value={t.slug}>
+                  {t.name}
+                </option>
+              ))}
+            </optgroup>
+          </select>
+        </div>
 
-        <input
-          type="number"
-          step="any"
-          min="0"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={
-            selected
-              ? selected.needs_reps
-                ? `Weight (${selected.unit})`
-                : `Result (${selected.unit})`
-              : "Result"
-          }
-          required
-          className="rounded border bg-white p-2 text-black"
-        />
+        <div className={selected?.needs_reps ? "grid grid-cols-2 gap-4" : ""}>
+          <div>
+            <label htmlFor="value" className="label">
+              {selected?.needs_reps ? "Weight" : "Result"}
+            </label>
+            <div className="field-wrap">
+              <input
+                id="value"
+                type="number"
+                inputMode="decimal"
+                step="any"
+                min="0"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                required
+                className="field"
+              />
+              {selected && <span className="field-unit">{selected.unit}</span>}
+            </div>
+          </div>
 
-        {selected?.needs_reps && (
+          {selected?.needs_reps && (
+            <div>
+              <label htmlFor="reps" className="label">
+                Reps
+              </label>
+              <div className="field-wrap">
+                <input
+                  id="reps"
+                  type="number"
+                  inputMode="numeric"
+                  step="1"
+                  min="1"
+                  value={reps}
+                  onChange={(e) => setReps(e.target.value)}
+                  required
+                  className="field"
+                />
+                <span className="field-unit">reps</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="date" className="label">
+            Date
+          </label>
           <input
-            type="number"
-            step="1"
-            min="1"
-            value={reps}
-            onChange={(e) => setReps(e.target.value)}
-            placeholder="Reps"
-            required
-            className="rounded border bg-white p-2 text-black"
+            id="date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="field"
           />
-        )}
+        </div>
 
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="rounded border bg-white p-2 text-black"
-        />
-
-        <button type="submit" className="rounded bg-blue-600 p-2 text-white">
+        <button type="submit" disabled={status.kind === "saving"} className="btn btn-primary w-full">
           Save result
         </button>
-      </form>
 
-      <p className="mt-3">{message}</p>
+        <div aria-live="polite">
+          {status.kind === "ok" && <p className="notice notice-good">{status.text}</p>}
+          {status.kind === "error" && <p className="notice notice-bad">{status.text}</p>}
+        </div>
+      </form>
     </main>
   );
 }
