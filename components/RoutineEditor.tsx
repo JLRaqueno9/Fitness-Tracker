@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import type { Exercise } from "@/lib/setup";
+import { difficultyLabel, type Exercise } from "@/lib/setup";
 
 export type EditorPayload = {
   name: string;
@@ -211,6 +211,12 @@ export default function RoutineEditor({ title, supports, initial, onSave, onCanc
               >
                 Remove
               </button>
+              {ex?.instructions && (
+                <p className="col-span-2 -mt-1 text-sm text-muted sm:col-span-4">
+                  {difficultyLabel(ex.difficulty) ? `${difficultyLabel(ex.difficulty)}. ` : ""}
+                  {ex.instructions}
+                </p>
+              )}
             </li>
           );
         })}

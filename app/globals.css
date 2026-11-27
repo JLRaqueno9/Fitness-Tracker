@@ -393,4 +393,36 @@
   .goal-bar.reached > span {
     background: var(--good);
   }
+
+  /* Difficulty levels on exercise chips */
+  .chip-level-1 {
+    background: var(--good-soft);
+    color: var(--good);
+  }
+  .chip-level-2 {
+    background: #3b2f12;
+    color: #ffd27a;
+  }
+  .chip-level-3 {
+    background: var(--bad-soft);
+    color: var(--bad);
+  }
+
+  /* Why an exercise was chosen or changed in a generated routine */
+  .reason {
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.6rem;
+    background: var(--sunken);
+    box-shadow: inset 4px 0 0 var(--line);
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .reason-switched,
+  .reason-replaced {
+    box-shadow: inset 4px 0 0 var(--accent);
+    color: var(--ink);
+  }
+  .reason-kept {
+    box-shadow: inset 4px 0 0 var(--good);
+  }
 }

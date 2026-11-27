@@ -16,7 +16,14 @@ import {
 } from "@/lib/generator";
 import { addDays, isDate, localToday } from "@/lib/setup";
 
-type ExerciseInfo = { slug: string; name: string; unit: string; equipment: string };
+type ExerciseInfo = {
+  slug: string;
+  name: string;
+  unit: string;
+  equipment: string;
+  difficulty: number | null;
+  instructions: string | null;
+};
 
 // All of the user's saved routines, newest first, with exercise names filled in
 export async function GET() {
@@ -40,7 +47,7 @@ export async function GET() {
 
   const { data: items, error: itemsError } = await supabase
     .from("routine_items")
-    .select("id, routine_id, for_test, exercise, sets, amount, notes")
+    .select("id, routine_id, for_test, exercise, sets, amount, notes, change_type")
     .in(
       "routine_id",
       rows.map((r: { id: number }) => r.id)
@@ -62,7 +69,7 @@ export async function GET() {
 
   const { data: info } = await supabase
     .from("exercises")
-    .select("slug, name, unit, equipment")
+    .select("slug, name, unit, equipment, difficulty, instructions")
     .in("slug", slugs);
 
   const lookup: Record<string, ExerciseInfo> = {};
@@ -87,6 +94,7 @@ export async function GET() {
             sets: number;
             amount: number;
             notes: string | null;
+            change_type: string | null;
           }) => ({
             id: i.id,
             for_test: i.for_test,
@@ -98,6 +106,9 @@ export async function GET() {
             sets: i.sets,
             amount: i.amount,
             notes: i.notes,
+            change_type: i.change_type,
+            difficulty: lookup[i.exercise]?.difficulty ?? null,
+            instructions: lookup[i.exercise]?.instructions ?? null,
           })
         ),
     }))
@@ -185,7 +196,7 @@ export async function POST(request: Request) {
   // 2. the exercises they chose, plus the supporting exercises linked to them
   const { data: testRows } = await supabase
     .from("exercises")
-    .select("slug, name, higher_is_better, needs_reps")
+    .select("slug, name, unit, higher_is_better, needs_reps")
     .in("slug", focus);
 
   const testBySlug: Record<string, TestInfo> = {};
@@ -208,7 +219,7 @@ export async function POST(request: Request) {
 
   const { data: supportRows, error: supportError } = await supabase
     .from("exercises")
-    .select("id, slug, unit, default_sets, default_amount, equipment")
+    .select("id, slug, name, unit, default_sets, default_amount, equipment")
     .in("slug", supportSlugs);
 
   if (supportError) {
@@ -312,6 +323,7 @@ export async function POST(request: Request) {
       sets: p.sets,
       amount: p.amount,
       notes: p.notes,
+      change_type: p.change_type,
     }))
   );
 

@@ -9,6 +9,8 @@ export type Exercise = {
   default_sets: number | null;
   default_amount: number | null;
   equipment: string;
+  difficulty: number | null;
+  instructions: string | null;
 };
 
 export type Result = {
@@ -36,7 +38,13 @@ export type RoutineItem = {
   sets: number;
   amount: number;
   notes: string | null;
+  // how this item came to be in a generated routine; null for custom routines and older items
+  change_type: ChangeType | null;
+  difficulty: number | null;
+  instructions: string | null;
 };
+
+export type ChangeType = "new" | "kept" | "switched" | "replaced" | "same";
 
 export type Routine = {
   id: number;
@@ -171,4 +179,28 @@ export function formatGoal(ex: Exercise, goal: Goal): string {
   return ex.needs_reps && goal.target_reps
     ? `${goal.target_value} ${ex.unit} × ${goal.target_reps} reps`
     : `${goal.target_value} ${ex.unit}`;
+}
+
+export function difficultyLabel(level: number | null): string | null {
+  if (level === 1) return "Beginner";
+  if (level === 2) return "Intermediate";
+  if (level === 3) return "Advanced";
+  return null;
+}
+
+export function changeLabel(type: ChangeType | null): string | null {
+  switch (type) {
+    case "new":
+      return "New";
+    case "kept":
+      return "Kept and increased";
+    case "switched":
+      return "Switched";
+    case "replaced":
+      return "Replaced";
+    case "same":
+      return "Kept the same";
+    default:
+      return null;
+  }
 }

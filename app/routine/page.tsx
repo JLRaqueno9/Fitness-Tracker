@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import RoutineEditor, { type EditorPayload } from "@/components/RoutineEditor";
 import {
   addDays,
+  changeLabel,
+  difficultyLabel,
   equipmentLabel,
   localToday,
   prettyDate,
@@ -226,12 +228,29 @@ export default function RoutinePage() {
                     className="flex items-start justify-between gap-4 border-t border-line py-3.5"
                   >
                     <div className="min-w-0">
-                      <p className="font-semibold leading-snug">{i.name}</p>
-                      {i.testName && <p className="text-sm text-muted">To improve: {i.testName}</p>}
+                      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold leading-snug">
+                        {i.name}
+                        {difficultyLabel(i.difficulty) && (
+                          <span className={`chip chip-level-${i.difficulty}`}>
+                            {difficultyLabel(i.difficulty)}
+                          </span>
+                        )}
+                      </p>
+                      {i.instructions && (
+                        <p className="mt-1 max-w-prose text-sm">{i.instructions}</p>
+                      )}
+                      {i.testName && <p className="mt-1 text-sm text-muted">To improve: {i.testName}</p>}
                       {i.equipment !== "none" && (
                         <p className="text-sm text-muted">Needs {equipmentLabel(i.equipment)}</p>
                       )}
-                      {i.notes && <p className="mt-1 max-w-prose text-sm text-muted">{i.notes}</p>}
+                      {i.notes && (
+                        <p className={`reason mt-2 ${i.change_type ? `reason-${i.change_type}` : ""}`}>
+                          {changeLabel(i.change_type) && (
+                            <span className="mb-1 block text-xs font-bold">{changeLabel(i.change_type)}</span>
+                          )}
+                          {i.notes}
+                        </p>
+                      )}
                     </div>
                     <p className="shrink-0 text-right font-display text-3xl font-bold leading-none tabular-nums">
                       {i.sets} × {i.amount}
